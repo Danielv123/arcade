@@ -1,4 +1,4 @@
 module.exports = {
 	name: "Snake",
-	server: "server.js",
+	entrypoint: "server.js",
 }
