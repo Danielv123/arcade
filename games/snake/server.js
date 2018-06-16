@@ -41,6 +41,7 @@ class snakeGame {
 			id: this.id,
 		});
 		this.players = {};
+		this.food = [];
 		wss.setMiddleware('onMessageFromWorker', data => {
 			if(data.event
 			&& data.event === "snakeInput"
@@ -79,6 +80,10 @@ class snakeGame {
 				if(player.y < 0) player.y = 49;
 				if(player.y > 49) player.y = 0;
 				
+				// THIS IS SUPER INEFFICIENT!
+				// now we check every player for collisions against every player once per player
+				checkCollisions(player, this.food);
+				
 				player.snake.push({
 					x:player.x,
 					y:player.y,
@@ -89,10 +94,43 @@ class snakeGame {
 			}
 			wss.publish(this.id, {
 				players: this.players,
+				food: this.food,
 			});
 			if(Date.now() > this.lastInputReceived +1000*60*5) clearInterval(this.gameTickInterval);
 		}
 		this.gameTickInterval = setInterval(doGameTick, 300);
+		
+		let checkCollisions = (player, food) => {
+			let players = this.players;
+			let snakes = [];
+			for(let playerName in players){
+				let player = players[playerName];
+				snakes.push(player.snake);
+			}
+			snakes.forEach(snake => {
+				snake.forEach(j => {
+					if(j.x == player.x && j.y == player.y){
+						player.score = 10;
+					}
+				});
+			});
+			food.forEach((apple, i) => {
+				if(player.x == apple.x && player.y == apple.y){
+					player.score += 2;
+					food.splice(i, 1); // remove apple from the board
+					addNewFood(food); // add new apple
+				}
+			});
+		}
+		function addNewFood(food){
+			food.push({
+				x:Math.floor(Math.random()*49),
+				y:Math.floor(Math.random()*49),
+			})
+		}
+		while(this.food.length < 10){
+			addNewFood(this.food);
+		}
 	}
 }
 

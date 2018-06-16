@@ -20,6 +20,13 @@
 		height:10px;
 		margin:0px;
 	}
+	.food {
+		position:fixed;
+		width:10px;
+		height:10px;
+		margin:0px;
+		border:2px solid red;
+	}
 	#game{
 		z-index:-1;
 		top:0px;
@@ -99,6 +106,10 @@
 			let snake = playerData.players[playerName].snake;
 			snake.forEach(joint => html += '<div style="top:'+joint.y*10+'px;left:'+joint.x*10+'px;background-color:'+stringToColour(playerName)+';" class="snakeJoint"></div>');
 		}
+		playerData.food.forEach(apple => {
+		console.log(apple)
+			html += '<div style="top:'+apple.y*10+'px;left:'+apple.x*10+'px;" class="food"></div>';
+		});
 		
 		document.querySelector("#game").innerHTML = html;
 	}
