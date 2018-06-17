@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>gswitch Arcade</title>
+</head>
+
+<body>
+	<h1>gswitch Arcade</h1>
+	<div id="menu">
+		<button id="createGame" type="button">Create new game</button><br><br>
+		<button id="joinGame">Join game</button>
+		<input id="gameId" type="text" placeholder="gameID">
+	</div>
+	<style>
+	.player{
+		position:fixed;
+		margin:0px;
+	}
+	.platform {
+		position:fixed;
+		margin:0px;
+		border:2px dashed darkgrey;
+	}
+	#game{
+		z-index:-1;
+		top:0px;
+		left:0px;
+		width:500px;
+		height:500px;
+		position:fixed;
+		border:1px solid black;
+		box-sizing: border-box;
+	}
+	#game * {
+		box-sizing: border-box;
+	}
+	</style>
+	<script src="./clusterws.min.js"></script>
+	<script>
+	let channel
+	let socket = new ClusterWS({
+		url: 'wss://localhost:443'
+	});
+	let gameId;
+	let playerId = "player"+Math.floor(Math.random()*1000).toString();
+	let gameData;
+	
+	socket.on('connect', () => {
+		console.log('Socket connected');
+
+		// After socket is connected we can start subscribing to the channels
+		// Method watch is responsible for getting messages
+		channel = socket.subscribe('commonChannel').watch((channelMessage) => {
+			console.log(channelMessage)
+		})
+	})
+	document.body.onkeypress = e => {
+		if(e.keyCode && gameId && playerId){
+			socket.send("gswitchInput", {
+				gameId,
+				playerId: playerId+"k"+e.keyCode,
+				input: "switch",
+			})
+		}
+	}
+	// get button from html dom
+	document.querySelector('#createGame').onclick = () => {
+		// You can send any type of data you would like
+		socket.send("gswitchCreateGame");
+		socket.on("gswitch", data => {
+			console.log(data);
+			if(data.action == "joinLobby"){
+				document.querySelector("h1").innerHTML = "Game ID: "+data.id;
+				gameId = data.id;
+				socket.subscribe(data.id).watch(msg => {
+					//console.log(msg)
+					if(msg) gameData = msg;
+				});
+			}
+		})
+		document.querySelector('#menu').outerHTML = "";
+		// Altetnative way to get channel is:
+		// socket.getChannelByName('commonChannel').publish('My super message to send')
+	}
+	document.querySelector("#joinGame").onclick = () => {
+		gameId = document.querySelector("#gameId").value;
+		if(gameId){
+			document.querySelector("h1").innerHTML = "Game ID: "+gameId;
+			socket.subscribe(gameId).watch(msg => {
+				//console.log(msg)
+				if(msg) renderGame(msg)
+			});
+			document.querySelector('#menu').outerHTML = "";
+		}
+	}
+	function renderGame() {
+		if(gameData){
+			let playerData = gameData;
+			let html = "";
+			for(let playerName in playerData.players){
+				let player = playerData.players[playerName];
+				html += html += '<div style="width:'+player.width+'px;height:'+player.height+'px;top:'+player.y+'px;left:'+player.x+'px;background-color:'+stringToColour(playerName)+';" class="player"></div>'
+			}
+			playerData.platforms.forEach(platform => {
+				html += '<div style="top:'+platform.top+'px;left:'+platform.left+'px;width:'+platform.width+'px;height:'+platform.height+'px;" class="platform"></div>';
+			});
+			
+			document.querySelector("#game").innerHTML = html;
+		}
+		window.requestAnimationFrame(renderGame);
+	}
+	renderGame();
+	var stringToColour = function(str) {
+		var hash = 0;
+		for (var i = 0; i < str.length; i++) {
+			hash = str.charCodeAt(i) + ((hash << 5) - hash);
+		}
+		hash *= 100;
+		var colour = '#';
+		for (var i = 0; i < 3; i++) {
+			var value = (hash >> (i * 8)) & 0xFF;
+			colour += ('00' + value.toString(16)).substr(-2);
+		}
+		return colour;
+	}
+	</script>
+	<div id="game">
+	
+	</div>
+</body>
+</html>
