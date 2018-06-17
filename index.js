@@ -25,6 +25,9 @@ const clusterws = new ClusterWS({
 function Worker() {
 	const ejs = require("ejs");
 	const path = require("path");
+	const EventEmitter = require('events');
+	class SocketEmitter extends EventEmitter {}
+	const socketEmitter = new SocketEmitter();
 	
 	const arcadeTools = require("./arcadeTools.js");
 	
@@ -35,12 +38,15 @@ function Worker() {
     const app = express();
 	const bodyParser = require("body-parser");
 	app.use(bodyParser.json());
-	const games = arcadeTools.loadGames({}, {
-		wss,
-		server,
-		app,
-	});
-	
+	(async function(){
+		const games = await arcadeTools.loadGames({}, {
+			wss,
+			server,
+			app,
+			socketEmitter,
+		});
+		console.log(games)
+	})();
 	// dynamic HTML generations with EJS
 	app.set('views', path.join(__dirname, 'static'));
 	app.set('view engine', 'html');
@@ -53,8 +59,8 @@ function Worker() {
 	server.on('request', app)
 
 	// Listen on WebSocket connection
-	wss.on('connection', (socket) => {
+	wss.on('connection', socket => {
 		console.log("Got connection on PID:"+process.pid);
-		
+		socketEmitter.emit("connection", socket);
 	});
 }

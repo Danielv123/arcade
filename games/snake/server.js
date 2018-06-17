@@ -4,17 +4,18 @@ function randomNumber(digits){
 	return Math.floor(Math.random()*9*Math.pow(10, digits-1 || 3))+Math.pow(10, digits-1 || 3)
 }
 class server {
-	constructor({wss, server, app}){
+	constructor({wss, server, app, socketEmitter}){
 		this.wss = wss;
 		this.app = app;
 		
 		this.lobbies = [];
 		
-		wss.on('connection', socket => {
+		socketEmitter.on('connection', socket => {
 			socket.on('snakeCreateGame', data => {
 				let lobby = new snakeGame({
 					wss,
-					creatorSocket:socket
+					creatorSocket:socket,
+					server:this,
 				});
 				this.lobbies.push(lobby);
 			});
@@ -33,7 +34,7 @@ class server {
 }
 
 class snakeGame {
-	constructor({id, wss, creatorSocket}){
+	constructor({id, wss, creatorSocket, server}){
 		this.id = id || "snake"+randomNumber(4);
 		this.lastInputReceived = Date.now();
 		creatorSocket.send('snake', {
@@ -50,13 +51,12 @@ class snakeGame {
 			&& data.data.playerId
 			&& data.data.input
 			&& typeof data.data.input === "string"){
-				console.log(`Registered input ${data.data.input} from ${data.data.playerId} in snakeGame ${data.data.gameId}`);
+				console.log(`Registered input "${data.data.input}" from ${data.data.playerId} in snakeGame ${data.data.gameId}`);
 				this.players[data.data.playerId] = this.players[data.data.playerId] || {};
 				let player = this.players[data.data.playerId];
 				player.input = data.data.input;
 				this.lastInputReceived = Date.now();
 			}
-			console.log(`Current worker pid ${process.pid} got message: \n ${JSON.stringify(data, null, 4)}`);
 		});
 		
 		// game logic
@@ -96,7 +96,12 @@ class snakeGame {
 				players: this.players,
 				food: this.food,
 			});
-			if(Date.now() > this.lastInputReceived +1000*60*5) clearInterval(this.gameTickInterval);
+			if(Date.now() > this.lastInputReceived +1000*60*5){
+				// lobby has been unused for 5 minutes
+				console.log(`Lobby "${this.id}" unused for 5 minutes, killing main loop.`)
+				clearInterval(this.gameTickInterval);
+				server.lobbies.splice(server.lobbies.indexOf(this), 1);
+			}
 		}
 		this.gameTickInterval = setInterval(doGameTick, 300);
 		
