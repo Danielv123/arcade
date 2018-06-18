@@ -65,6 +65,7 @@ class snakeGame {
 				if(data.data.input == "up" && player.input != "down") player.input = data.data.input;
 				if(data.data.input == "down" && player.input != "up") player.input = data.data.input;
 				this.lastInputReceived = Date.now();
+				player.lastInputReceived = Date.now();
 			}
 		});
 		
@@ -99,6 +100,11 @@ class snakeGame {
 				});
 				while(player.snake.length > player.score){
 					player.snake.shift();
+				}
+				if(Date.now() > player.lastInputReceived + 1000*60*2){
+					// kill snakes after 2 minutes of nonresponsiveness
+					console.log(`Killed ${playerName}`);
+					delete this.players[playerName];
 				}
 			}
 			wss.publish(this.id, {

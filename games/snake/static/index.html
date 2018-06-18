@@ -45,7 +45,7 @@
 	<script>
 	let channel
 	let socket = new ClusterWS({
-		url: 'wss://leveller.danielv.no:443'
+		url: 'wss://' + location.host + ':443'
 	});
 	let gameId;
 	let playerId = "plyer"+Math.floor(Math.random()*1000).toString();
@@ -111,7 +111,7 @@
 			snake.forEach(joint => html += '<div style="top:'+joint.y*10+'px;left:'+joint.x*10+'px;background-color:'+stringToColour(playerName)+';" class="snakeJoint"></div>');
 		}
 		playerData.food.forEach(apple => {
-		console.log(apple)
+			//console.log(apple)
 			html += '<div style="top:'+apple.y*10+'px;left:'+apple.x*10+'px;" class="food"></div>';
 		});
 		
