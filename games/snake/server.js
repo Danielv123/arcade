@@ -43,6 +43,12 @@ class snakeGame {
 		});
 		this.players = {};
 		this.food = [];
+		this.settings = {
+			startingScore: 5,
+			foodScore: 4,
+			mapWidth: 75,
+			mapHeight: 75,
+		};
 		wss.setMiddleware('onMessageFromWorker', data => {
 			if(data.event
 			&& data.event === "snakeInput"
@@ -54,7 +60,10 @@ class snakeGame {
 				console.log(`Registered input "${data.data.input}" from ${data.data.playerId} in snakeGame ${data.data.gameId}`);
 				this.players[data.data.playerId] = this.players[data.data.playerId] || {};
 				let player = this.players[data.data.playerId];
-				player.input = data.data.input;
+				if(data.data.input == "left" && player.input != "right") player.input = data.data.input;
+				if(data.data.input == "right" && player.input != "left") player.input = data.data.input;
+				if(data.data.input == "up" && player.input != "down") player.input = data.data.input;
+				if(data.data.input == "down" && player.input != "up") player.input = data.data.input;
 				this.lastInputReceived = Date.now();
 			}
 		});
@@ -65,7 +74,7 @@ class snakeGame {
 			for(let playerName in this.players){
 				let player = this.players[playerName];
 				if(!player.snake) player.snake = [];
-				if(!player.score) player.score = 10;
+				if(!player.score) player.score = this.settings.startingScore;
 				if(player.x === undefined) player.x = Math.floor(Math.random()*30)+10;
 				if(player.y === undefined) player.y = Math.floor(Math.random()*30)+10;
 				
@@ -75,10 +84,10 @@ class snakeGame {
 					if(player.input == "left") player.x--;
 					if(player.input == "right") player.x++;
 				}
-				if(player.x < 0) player.x = 49;
-				if(player.x > 49) player.x = 0;
-				if(player.y < 0) player.y = 49;
-				if(player.y > 49) player.y = 0;
+				if(player.x < 0) player.x = this.settings.mapWidth-1;
+				if(player.x > this.settings.mapWidth-1) player.x = 0;
+				if(player.y < 0) player.y = this.settings.mapHeight-1;
+				if(player.y > this.settings.mapHeight-1) player.y = 0;
 				
 				// THIS IS SUPER INEFFICIENT!
 				// now we check every player for collisions against every player once per player
@@ -115,22 +124,22 @@ class snakeGame {
 			snakes.forEach(snake => {
 				snake.forEach(j => {
 					if(j.x == player.x && j.y == player.y){
-						player.score = 10;
+						player.score = this.settings.startingScore;
 					}
 				});
 			});
 			food.forEach((apple, i) => {
 				if(player.x == apple.x && player.y == apple.y){
-					player.score += 2;
+					player.score += this.settings.foodScore;
 					food.splice(i, 1); // remove apple from the board
 					addNewFood(food); // add new apple
 				}
 			});
 		}
-		function addNewFood(food){
+		let addNewFood = food => {
 			food.push({
-				x:Math.floor(Math.random()*49),
-				y:Math.floor(Math.random()*49),
+				x:Math.floor(Math.random()*(this.settings.mapWidth-1)),
+				y:Math.floor(Math.random()*(this.settings.mapHeight-1)),
 			})
 		}
 		while(this.food.length < 10){
