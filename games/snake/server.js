@@ -122,11 +122,13 @@ class snakeGame {
 				snakes.push(player.snake);
 			}
 			snakes.forEach(snake => {
-				snake.forEach(j => {
-					if(j.x == player.x && j.y == player.y){
-						player.score = this.settings.startingScore;
-					}
-				});
+				if(snake){
+					snake.forEach(j => {
+						if(j.x == player.x && j.y == player.y){
+							player.score = this.settings.startingScore;
+						}
+					});
+				}
 			});
 			food.forEach((apple, i) => {
 				if(player.x == apple.x && player.y == apple.y){
