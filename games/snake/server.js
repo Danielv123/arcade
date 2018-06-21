@@ -57,7 +57,7 @@ class snakeGame {
 			&& data.data.playerId
 			&& data.data.input
 			&& typeof data.data.input === "string"){
-				console.log(`Registered input "${data.data.input}" from ${data.data.playerId} in snakeGame ${data.data.gameId}`);
+				// console.log(`Registered input "${data.data.input}" from ${data.data.playerId} in snakeGame ${data.data.gameId}`);
 				this.players[data.data.playerId] = this.players[data.data.playerId] || {};
 				let player = this.players[data.data.playerId];
 				if(data.data.input == "left" && player.input != "right") player.input = data.data.input;
@@ -107,7 +107,7 @@ class snakeGame {
 				}
 				if(Date.now() > player.lastInputReceived + 1000*60*2){
 					// kill snakes after 2 minutes of nonresponsiveness
-					console.log(`Killed ${playerName}`);
+					console.log(`Killed ${playerName} after 2 minutes unresponsive`);
 					while(player.snake.length){
 						removedTiles.push(player.snake.shift());
 					}
@@ -127,7 +127,7 @@ class snakeGame {
 				server.lobbies.splice(server.lobbies.indexOf(this), 1);
 			}
 		}
-		this.gameTickInterval = setInterval(doGameTick, 300);
+		this.gameTickInterval = setInterval(doGameTick, 250);
 		
 		let checkCollisions = (player, food) => {
 			let players = this.players;
@@ -140,6 +140,7 @@ class snakeGame {
 				if(snake){
 					snake.forEach(j => {
 						if(j.x == player.x && j.y == player.y){
+							if(player.score > 100) console.log(`Player with score ${player.score} crashed`);
 							player.score = this.settings.startingScore;
 						}
 					});
