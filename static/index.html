@@ -7,36 +7,11 @@
 </head>
 
 <body>
-	<h1>Express App Example</h1>
+	<h1>nodeJS arcade</h1>
+	<a href="/snake">Snake</a><br>
+	<a href="/gswitch">gswitch</a>
 
-	<button id="sendMessage" type="button">Broadcast Message</button>
-
-	<script src="./clusterws.min.js"></script>
 	<script>
-	let channel
-	let socket = new ClusterWS({
-		url: 'wss://localhost:443'
-	});
-	
-	socket.on('connect', () => {
-		console.log('Socket connected');
-
-		// After socket is connected we can start subscribing to the channels
-		// Method watch is responsible for getting messages
-		channel = socket.subscribe('commonChannel').watch((channelMessage) => {
-			console.log(channelMessage)
-		})
-	})
-
-	// get button from html dom
-	const sendMessageButton = document.getElementById('sendMessage')
-	sendMessageButton.onclick = () => {
-		// You can send any type of data you would like
-		channel.publish('My super message to send')
-
-		// Altetnative way to get channel is:
-		// socket.getChannelByName('commonChannel').publish('My super message to send')
-	}
 	</script>
 </body>
 </html>
