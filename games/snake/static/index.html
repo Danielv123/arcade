@@ -41,6 +41,9 @@
 		box-sizing: border-box;
 	}
 	</style>
+	<style id="styles">
+	
+	</style>
 	<script src="./clusterws.min.js"></script>
 	<script>
 	let channel
@@ -106,16 +109,28 @@
 	}
 	function renderGame(playerData) {
 		let html = "";
-		for(let playerName in playerData.players){
-			let snake = playerData.players[playerName].snake;
-			snake.forEach(joint => html += '<div style="top:'+joint.y*10+'px;left:'+joint.x*10+'px;background-color:'+stringToColour(playerName)+';" class="snakeJoint"></div>');
-		}
+		let gameContainer = document.querySelector("#game");
+		playerData.removedTiles.forEach(tileData => {
+			let tiles = document.querySelectorAll(`.x${tileData.x}.y${tileData.y}`);
+			tiles.forEach(tile => tile.outerHTML = "");
+		});//*/
+		playerData.addedTiles.forEach(tileData => {
+			let tile = document.createElement("div");
+			tile.classList.add(`x${tileData.x}`, `y${tileData.y}`, "snakeJoint");
+			tile.style.backgroundColor = tileData.color;
+			gameContainer.appendChild(tile);
+		});
 		playerData.food.forEach(apple => {
-			//console.log(apple)
+			let oldApple = document.querySelector(`.x${apple.x}.y${apple.y}`);
+			if(!oldApple){
+				let tile = document.createElement("div");
+				tile.classList.add(`x${apple.x}`, `y${apple.y}`, "food");
+				gameContainer.appendChild(tile);
+			}
 			html += '<div style="top:'+apple.y*10+'px;left:'+apple.x*10+'px;" class="food"></div>';
 		});
 		
-		document.querySelector("#game").innerHTML = html;
+		//document.querySelector("#game").innerHTML = html;
 	}
 	var stringToColour = function(str) {
 		var hash = 0;
@@ -129,6 +144,15 @@
 		}
 		return colour;
 	}
+	
+	// Generate stylesheet
+	let css = "";
+	for(let i = 0; i < 99; i++){
+		let offset = i*10;
+		css += `.x${i} {left: ${offset}px;}`
+		css += `.y${i} {top: ${offset}px;}`
+	}
+	document.querySelector("#styles").innerHTML = css;
 	</script>
 	<div id="game">
 	

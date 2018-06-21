@@ -71,6 +71,8 @@ class snakeGame {
 		
 		// game logic
 		let doGameTick = () => {
+			let addedTiles = [];
+			let removedTiles = [];
 			// console.log("Gametick")
 			for(let playerName in this.players){
 				let player = this.players[playerName];
@@ -90,25 +92,32 @@ class snakeGame {
 				if(player.y < 0) player.y = this.settings.mapHeight-1;
 				if(player.y > this.settings.mapHeight-1) player.y = 0;
 				
-				// THIS IS SUPER INEFFICIENT!
+				// THIS IS SUPER EXPENSIVE!
 				// now we check every player for collisions against every player once per player
 				checkCollisions(player, this.food);
-				
-				player.snake.push({
+				let snakeHead = {
 					x:player.x,
 					y:player.y,
-				});
+					color:stringToColour(playerName),
+				}
+				player.snake.push(snakeHead);
+				addedTiles.push(snakeHead);
 				while(player.snake.length > player.score){
-					player.snake.shift();
+					removedTiles.push(player.snake.shift());
 				}
 				if(Date.now() > player.lastInputReceived + 1000*60*2){
 					// kill snakes after 2 minutes of nonresponsiveness
 					console.log(`Killed ${playerName}`);
+					while(player.snake.length){
+						removedTiles.push(player.snake.shift());
+					}
 					delete this.players[playerName];
 				}
 			}
 			wss.publish(this.id, {
-				players: this.players,
+				// players: this.players,
+				addedTiles,
+				removedTiles,
 				food: this.food,
 			});
 			if(Date.now() > this.lastInputReceived +1000*60*5){
@@ -155,7 +164,18 @@ class snakeGame {
 		}
 	}
 }
-
+var stringToColour = function(str) {
+	var hash = 0;
+	for (var i = 0; i < str.length; i++) {
+		hash = str.charCodeAt(i) + ((hash << 5) - hash);
+	}
+	var colour = '#';
+	for (var i = 0; i < 3; i++) {
+		var value = (hash >> (i * 8)) & 0xFF;
+		colour += ('00' + value.toString(16)).substr(-2);
+	}
+	return colour;
+}
 module.exports = {
 	server
 };

@@ -63,3 +63,5 @@ typings/
 database/certificates/
 
 package-lock\.json
+
+shrinkwrap\.yaml
