@@ -1,4 +1,5 @@
 const fs = require("fs-extra");
+const gswitchPlatforms = require("./platforms.js")
 
 function randomNumber(digits){
 	return Math.floor(Math.random()*9*Math.pow(10, digits-1 || 3))+Math.pow(10, digits-1 || 3)
@@ -53,8 +54,8 @@ class gswitchGame {
 			&& typeof data.data.input === "string"){
 				console.log(`Registered input ${data.data.input} from ${data.data.playerId} in gswitchGame ${data.data.gameId}`);
 				this.players[data.data.playerId] = this.players[data.data.playerId] || {
-					height:20,
-					width:20,
+					height:10,
+					width:10,
 				};
 				let player = this.players[data.data.playerId];
 				// player.input = data.data.input;
@@ -85,19 +86,24 @@ class gswitchGame {
 				// get distance to nearest platform/thing to collide with
 				let maxDistance = 9999;
 				this.platforms.forEach(platform => {
-					if(dir > 0){
-						// look for platforms below us
-						var distance = platform.top - (player.y + player.height);
-					} else if(dir < 0){
-						// look for platforms above us
-						var distance = player.y - platform.top - platform.height;
-					}
-					if(distance >= 0 && distance < maxDistance){
-						maxDistance = distance;
+					// console.log(platform.x + platform.width)
+					if(platform.left < player.x + player.width
+					&& platform.left + platform.width > player.x){
+						if(dir > 0){
+							// look for platforms below us
+							var distance = platform.top - (player.y + player.height);
+						} else if(dir < 0){
+							// look for platforms above us
+							var distance = player.y - platform.top - platform.height;
+						}
+						if(distance >= 0 && distance < maxDistance){
+							maxDistance = distance;
+						}
 					}
 				});
 				for(let otherPlayerName in this.players){
-					if(otherPlayerName != playerName){
+					if(otherPlayerName != playerName // don't check collisions against yourself
+					){
 						let distance;
 						let otherPlayer = this.players[otherPlayerName]
 						if(dir > 0){
@@ -126,6 +132,10 @@ class gswitchGame {
 			// this can be probably be done my moving all the platforms
 			// also, slightly move the player towards the center
 			// so he won't fall off.
+			this.platforms.forEach(platform => {
+				platform.left -= this.settings.speed;
+			});
+			
 			wss.publish(this.id, {
 				players: this.players,
 				platforms: this.platforms,
@@ -155,6 +165,11 @@ class gswitchGame {
 				top:	490,
 				left:	0,
 			});
+			gswitchPlatforms.tract({
+				startDistanceFromCenter: 200,
+				stopDistanceFromCenter: 0,
+				startOffset: 700,
+			}).forEach(platform => this.platforms.push(platform));
 		}
 		restartGame(); // generate the initial game
 		let registerInput = (playerId, input) => {
